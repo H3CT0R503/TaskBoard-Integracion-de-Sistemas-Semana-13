@@ -1,0 +1,130 @@
+####################################################################
+# TaskBoard — Colección de pruebas de la API REST
+# Semana 13 — Servicios Web REST con Laravel: JSON y API Resources
+#
+# Cómo usarlo: instalar la extensión "REST Client" (Huachao Mao) en
+# VS Code, abrir este archivo y pulsar "Send Request" sobre la línea
+# del método de cada petición.
+#
+# Antes de empezar: php artisan serve
+#
+# Accept: application/json va en TODAS las peticiones, menos en la
+# número 10, que existe justo para mostrar qué pasa sin él.
+####################################################################
+
+@host = http://127.0.0.1:8000/api
+
+
+### 1. Listar comercios
+# Espera 200 + lista dentro de "data", sin user_id ni fechas,
+# y SIN la clave "transacciones" (no se cargó la relación).
+GET {{host}}/comercios
+Accept: application/json
+
+
+### 2. Ver un comercio con sus transacciones
+# Espera 200 + el comercio CON la clave "transacciones",
+# cada monto como número y cada fecha en ISO 8601.
+GET {{host}}/comercios/1
+Accept: application/json
+
+
+### 3. Comercio que no existe
+# Espera 404 en JSON, no una página HTML de error.
+GET {{host}}/comercios/999
+Accept: application/json
+
+
+### 4. Listar transacciones
+# Espera 200 + lista dentro de "data", de la más reciente a la más vieja.
+GET {{host}}/transacciones
+Accept: application/json
+
+
+### 5. Ver una transacción
+# Espera 200 + un solo objeto dentro de "data".
+GET {{host}}/transacciones/1
+Accept: application/json
+
+
+### 6. Transacción que no existe
+# Espera 404 en JSON.
+GET {{host}}/transacciones/999
+Accept: application/json
+
+
+### 7. Crear una transacción con datos válidos
+# Espera 201 Created + el objeto creado con su id.
+# El campo "estado" se puede omitir: la columna nace en 'Iniciada'.
+POST {{host}}/transacciones
+Accept: application/json
+Content-Type: application/json
+
+{
+  "comercio_id": 1,
+  "cliente_nombre": "Luis Mena",
+  "monto": 25.50
+}
+
+
+### 8. Crear con datos inválidos
+# Espera 422 + un objeto "errors" que nombra cada campo que falló:
+# falta cliente_nombre y el monto es negativo.
+POST {{host}}/transacciones
+Accept: application/json
+Content-Type: application/json
+
+{
+  "comercio_id": 1,
+  "monto": -5
+}
+
+
+### 9. Eliminar una transacción
+# Espera 204 sin cuerpo. Un segundo DELETE al mismo id responde 404.
+# Ajustar el id al que devolvió la petición 7.
+DELETE {{host}}/transacciones/5
+Accept: application/json
+
+
+### 10. EXPERIMENTO (Lab 8): el mismo POST inválido SIN Accept
+# Espera 302, una redirección: Laravel cree que viene de un formulario
+# web y responde como le respondería a un navegador. Para un programa
+# esa respuesta es inútil, porque no trae los errores en ningún lado.
+POST {{host}}/transacciones
+Content-Type: application/json
+
+{
+  "comercio_id": 1,
+  "monto": -5
+}
+
+
+####################################################################
+# RETO — Filtrar transacciones por estado
+####################################################################
+
+### 11. Filtro con resultados
+# Espera 200 + solo las transacciones Completadas.
+GET {{host}}/transacciones?estado=Completada
+Accept: application/json
+
+
+### 12. Filtro sin coincidencias
+# Espera 200 + "data": [] — una lista vacía, NO un 404.
+# La consulta se entendió y se resolvió bien; que nada coincida es
+# un resultado válido, no un error.
+GET {{host}}/transacciones?estado=Fallida
+Accept: application/json
+
+
+### 13. Filtro con un estado inventado
+# Espera 200 + "data": [] por la misma razón.
+GET {{host}}/transacciones?estado=NoExiste
+Accept: application/json
+
+
+### 14. Sin filtro, para comprobar que no se rompió nada
+# Espera 200 + todas las transacciones, igual que la petición 4.
+GET {{host}}/transacciones
+Accept: application/json
